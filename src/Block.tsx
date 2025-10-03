@@ -1,119 +1,125 @@
-import {
-    type Asset,
-    useBlockSettings,
-    useBlockAssets,
-    rgbObjectToRgbString,
-    useColorPalettes,
-} from '@frontify/app-bridge';
-import { SegmentedControl } from '@frontify/fondue-components';
+import { useBlockSettings } from '@frontify/app-bridge';
 import { type BlockProps } from '@frontify/guideline-blocks-settings';
 import { useEffect, useState, type FC } from 'react';
-
-import ColorSwatch from './ColorSwatch';
-
-type TransformMode = 'none' | 'remove-bg' | 'achro' | 'flip';
-
-interface Settings {
-    colorInput: { red: number; green: number; blue: number; alpha: number };
-}
+import { AssetMap } from './AssetMap';
+import { FrontifyService } from './frontifyService';
+import type { Settings, AssetWithLocation } from './types';
 
 export const AnExampleBlock: FC<BlockProps> = ({ appBridge }) => {
     const [blockSettings] = useBlockSettings<Settings>(appBridge);
-    const { colorPalettes } = useColorPalettes(appBridge);
-    const [blockAsset, setBlockAsset] = useState<Asset | null>(null);
-    const { blockAssets } = useBlockAssets(appBridge);
-    const [mode, setMode] = useState<TransformMode>('none');
-    const getTransformedUrl = (url: string | null, m: TransformMode) => {
-        if (!url) {
-            return null;
-        }
-        // Remove any width={width} placeholder (all occurrences, ?width={width} or &width={width})
-        let cleaned = url.replaceAll(/([&?])?width={width}/g, '');
-        // Collapse double ampersands (use replace with global regex for compatibility)
-        cleaned = cleaned.replaceAll('&&', '&');
-        // Ensure no trailing ? or &
-        cleaned = cleaned.replace(/[&?]$/, '');
-        // Always start with mod=v1
-        const sep = cleaned.includes('?') ? '' : '?';
-        let finalUrl = `${cleaned}${sep}mod=v1`;
-        // Append transform using "/" as separator
-        switch (m) {
-            case 'remove-bg':
-                finalUrl += '/background=remove';
-                break;
-            case 'achro':
-                finalUrl += '/achro';
-                break;
-            case 'flip':
-                finalUrl += '/flip=both';
-                break;
-            case 'none':
-            default:
-                break;
-        }
-        return finalUrl;
-    };
-    const transformedUrl = getTransformedUrl(blockAsset?.previewUrl ?? null, mode);
+    const [assets, setAssets] = useState<AssetWithLocation[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const uploadedAsset = blockAssets.assetUpload?.[0];
-        if (uploadedAsset) {
-            setBlockAsset(uploadedAsset);
-        }
-    }, [blockAssets]);
+        const loadAssets = async () => {
+            setLoading(true);
+            setError(null);
 
-    console.log(blockSettings);
-    console.log(colorPalettes);
+            try {
+                const service = new FrontifyService();
+                const metadataKeys = service.getMetadataKeys();
+
+                // Fetch all assets
+                const allAssets = await service.fetchAllAssets();
+
+                // Extract assets with valid location metadata
+                const assetsWithLocation = service.extractAssetsWithLocation(allAssets);
+
+                setAssets(assetsWithLocation);
+
+                if (assetsWithLocation.length === 0 && allAssets.length > 0) {
+                    setError(
+                        `Found ${allAssets.length} total assets, but none have valid location metadata. ` +
+                        `Make sure your assets have "${metadataKeys.latitude}" and ` +
+                        `"${metadataKeys.longitude}" custom metadata fields configured in Frontify.`
+                    );
+                }
+            } catch (err) {
+                console.error('Error loading assets:', err);
+                setError(
+                    err instanceof Error
+                        ? `Failed to load assets: ${err.message}`
+                        : 'Failed to load assets from Frontify. Please check your environment configuration.'
+                );
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadAssets();
+    }, []); // Only run once on mount
 
     return (
         <div className="tw-p-6">
-            <h2
-                className="tw-text-2xl tw-font-bold tw-mb-4 tw-p-4 tw-rounded-lg"
-                style={{ backgroundColor: rgbObjectToRgbString(blockSettings.colorInput) }}
-            >
-                Color Palette Explorer
-            </h2>
+            <div className="tw-mb-6">
+                <h2 className="tw-text-3xl tw-font-bold tw-mb-2">
+                    {blockSettings.mapTitle || 'Frontify Asset Map'}
+                </h2>
+                <p className="tw-text-gray-600">
+                    {blockSettings.mapDescription || 'Explore your Frontify assets on an interactive map'}
+                </p>
+            </div>
 
-            {transformedUrl && (
-                <div className="tw-mb-6">
-                    <SegmentedControl.Root
-                        defaultValue="none"
-                        value={mode}
-                        onValueChange={(v) => setMode(v as TransformMode)}
-                    >
-                        <SegmentedControl.Item value="none">none</SegmentedControl.Item>
-                        <SegmentedControl.Item value="remove-bg">Remove BG</SegmentedControl.Item>
-                        <SegmentedControl.Item value="achro">achro</SegmentedControl.Item>
-                        <SegmentedControl.Item value="flip">flip</SegmentedControl.Item>
-                    </SegmentedControl.Root>
-                    {transformedUrl}
-                    <img src={transformedUrl} alt="Uploaded asset" className="tw-max-w-md tw-rounded-lg tw-shadow-md" />
+            {loading && (
+                <div 
+                    className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-bg-gray-50 tw-rounded-lg"
+                    style={{ height: `${blockSettings.mapHeight || 600}px` }}
+                >
+                    <div className="tw-animate-spin tw-rounded-full tw-h-12 tw-w-12 tw-border-b-2 tw-border-blue-600 tw-mb-4"></div>
+                    <p className="tw-text-gray-600">Loading assets from Frontify...</p>
                 </div>
             )}
 
-            {colorPalettes && colorPalettes.length > 0 ? (
-                <div className="tw-space-y-8">
-                    {colorPalettes.map((palette) => (
-                        <div key={palette.id} className="tw-border tw-border-gray-200 tw-rounded-lg tw-p-6">
-                            <h3 className="tw-text-xl tw-font-semibold tw-mb-4">{palette.name}</h3>
-
-                            <div className="tw-flex tw-flex-wrap tw-gap-4">
-                                {palette.colors.map((color) => (
-                                    <div key={color.id} className="tw-flex tw-flex-col tw-items-center tw-gap-2">
-                                        <ColorSwatch color={rgbObjectToRgbString(color)} />
-                                        {color.name && (
-                                            <span className="tw-text-sm tw-text-gray-600 tw-text-center tw-max-w-[80px] tw-truncate">
-                                                {color.name}
-                                            </span>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
+            {error && (
+                <div className="tw-bg-red-50 tw-border tw-border-red-200 tw-rounded-lg tw-p-4 tw-mb-6">
+                    <h3 className="tw-text-red-800 tw-font-semibold tw-mb-2">Error</h3>
+                    <p className="tw-text-red-600">{error}</p>
                 </div>
-            ) : (
-                <p className="tw-text-gray-500 tw-italic">No color palettes available</p>
+            )}
+
+            {!loading && !error && assets.length > 0 && (
+                <>
+                    {blockSettings.showAssetCount && (
+                        <div className="tw-mb-4 tw-flex tw-items-center tw-justify-between">
+                            <p className="tw-text-sm tw-text-gray-600">
+                                Showing <span className="tw-font-semibold">{assets.length}</span> asset
+                                {assets.length !== 1 ? 's' : ''} with location data
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => window.location.reload()}
+                                className="tw-px-4 tw-py-2 tw-bg-blue-600 tw-text-white tw-rounded-lg hover:tw-bg-blue-700 tw-transition-colors tw-text-sm"
+                            >
+                                Refresh
+                            </button>
+                        </div>
+                    )}
+                    <AssetMap 
+                        assets={assets} 
+                        defaultZoom={blockSettings.defaultZoom || 2}
+                        mapHeight={blockSettings.mapHeight || 600}
+                    />
+                </>
+            )}
+
+            {!loading && !error && assets.length === 0 && (
+                <div className="tw-bg-blue-50 tw-border tw-border-blue-200 tw-rounded-lg tw-p-6">
+                    <h3 className="tw-text-blue-800 tw-font-semibold tw-mb-2">No Assets Found</h3>
+                    <p className="tw-text-blue-600 tw-mb-4">
+                        No assets with location metadata were found in your Frontify library.
+                    </p>
+                    <div className="tw-text-sm tw-text-blue-700">
+                        <p className="tw-font-semibold tw-mb-2">To add location data to your assets:</p>
+                        <ol className="tw-list-decimal tw-list-inside tw-space-y-1">
+                            <li>Go to your Frontify Media Library</li>
+                            <li>Select an asset</li>
+                            <li>Add custom metadata fields for latitude and longitude</li>
+                            <li>Enter valid coordinates (e.g., 40.7128 for latitude, -74.0060 for longitude)</li>
+                            <li>Return here and click the Refresh button</li>
+                        </ol>
+                    </div>
+                </div>
             )}
         </div>
     );
