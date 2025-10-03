@@ -1,8 +1,8 @@
 export interface Settings {
     mapTitle: string;
     mapDescription: string;
-    defaultZoom: number;
-    mapHeight: number;
+    defaultZoom: string; // Dropdown returns string
+    mapHeight: string; // Dropdown returns string
     showAssetCount: boolean;
 }
 

@@ -1,16 +1,19 @@
 import type { FrontifyAssetsResponse, FrontifyAsset, AssetWithLocation } from './types';
 
-const ASSETS_QUERY = `
-  query GetAssets($limit: Int!, $page: Int!) {
-    assets(limit: $limit, page: $page) {
-      total
-      items {
-        id
-        title
-        previewUrl
-        metadataValues {
-          key
-          value
+// Query for assets within a specific library
+const LIBRARY_ASSETS_QUERY = `
+  query GetLibraryAssets($libraryId: ID!, $limit: Int!, $page: Int!) {
+    library(id: $libraryId) {
+      assets(limit: $limit, page: $page) {
+        total
+        items {
+          id
+          title
+          previewUrl
+          metadataValues {
+            key
+            value
+          }
         }
       }
     }
@@ -20,6 +23,7 @@ const ASSETS_QUERY = `
 export class FrontifyService {
     private domain: string;
     private token: string;
+    private libraryId: string;
     private latKey: string;
     private lonKey: string;
 
@@ -27,11 +31,19 @@ export class FrontifyService {
         // Read from environment variables
         this.domain = import.meta.env.VITE_FRONTIFY_DOMAIN || '';
         this.token = import.meta.env.VITE_FRONTIFY_BEARER_TOKEN || '';
+        this.libraryId = import.meta.env.VITE_LIBRARY_ID || '';
         this.latKey = import.meta.env.VITE_LATITUDE_KEY || 'latitude';
         this.lonKey = import.meta.env.VITE_LONGITUDE_KEY || 'longitude';
 
-        if (!this.domain || !this.token) {
-            console.error('Missing Frontify configuration. Please check your .env file.');
+        // Validate required configuration
+        if (!this.domain) {
+            throw new Error('VITE_FRONTIFY_DOMAIN is required in .env file');
+        }
+        if (!this.token) {
+            throw new Error('VITE_FRONTIFY_BEARER_TOKEN is required in .env file');
+        }
+        if (!this.libraryId) {
+            throw new Error('VITE_LIBRARY_ID is required in .env file');
         }
     }
 
@@ -48,8 +60,9 @@ export class FrontifyService {
                     Authorization: `Bearer ${this.token}`,
                 },
                 body: JSON.stringify({
-                    query: ASSETS_QUERY,
+                    query: LIBRARY_ASSETS_QUERY,
                     variables: {
+                        libraryId: this.libraryId,
                         limit,
                         page,
                     },
@@ -60,13 +73,19 @@ export class FrontifyService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const result: FrontifyAssetsResponse = await response.json();
+            const result = await response.json();
 
-            if (!result.data?.assets?.items) {
-                throw new Error('Invalid response structure from Frontify API');
+            // Check for GraphQL errors
+            if (result.errors) {
+                const errorMessage = result.errors.map((e: any) => e.message).join(', ');
+                throw new Error(`GraphQL error: ${errorMessage}`);
             }
 
-            return result.data.assets.items;
+            if (!result.data?.library?.assets?.items) {
+                throw new Error('Invalid response structure from Frontify API. Check your library ID.');
+            }
+
+            return result.data.library.assets.items;
         } catch (error) {
             console.error('Error fetching assets from Frontify:', error);
             throw error;
@@ -139,5 +158,9 @@ export class FrontifyService {
             latitude: this.latKey,
             longitude: this.lonKey,
         };
+    }
+
+    getLibraryId() {
+        return this.libraryId;
     }
 }

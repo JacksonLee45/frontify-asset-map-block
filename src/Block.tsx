@@ -97,8 +97,8 @@ export const AnExampleBlock: FC<BlockProps> = ({ appBridge }) => {
                     )}
                     <AssetMap 
                         assets={assets} 
-                        defaultZoom={blockSettings.defaultZoom || 2}
-                        mapHeight={blockSettings.mapHeight || 600}
+                        defaultZoom={10}
+                        mapHeight={600}
                     />
                 </>
             )}
