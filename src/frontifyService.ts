@@ -1,6 +1,6 @@
 import type { FrontifyAssetsResponse, FrontifyAsset, AssetWithLocation } from './types';
 
-// Query for assets within a specific library using customMetadata
+// Simplified query - only fetching what we actually need
 const LIBRARY_ASSETS_QUERY = `
   query GetLibraryAssets($id: ID!, $limit: Int!, $page: Int!) {
     library(id: $id) {

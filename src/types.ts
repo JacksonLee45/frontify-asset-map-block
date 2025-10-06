@@ -1,34 +1,27 @@
 export interface Settings {
     mapTitle: string;
     mapDescription: string;
-    defaultZoom: string; // Dropdown returns string
-    mapHeight: string; // Dropdown returns string
+    defaultZoom: string;
+    mapHeight: string;
     showAssetCount: boolean;
 }
 
 export interface CustomMetadataProperty {
     id: string;
-    name?: string;
+    name: string;
 }
 
-export interface CustomMetadataValue {
+export interface CustomMetadataItem {
     property: CustomMetadataProperty;
     value?: string;
-}
-
-export interface CustomMetadataValues {
-    property: CustomMetadataProperty;
     values?: string[];
 }
-
-export type CustomMetadata = CustomMetadataValue | CustomMetadataValues;
 
 export interface FrontifyAsset {
     id: string;
     title: string;
     previewUrl?: string;
-    detailUrl?: string;
-    customMetadata?: CustomMetadata[];
+    customMetadata?: CustomMetadataItem[];
 }
 
 export interface AssetWithLocation extends FrontifyAsset {
@@ -40,8 +33,8 @@ export interface FrontifyAssetsResponse {
     data: {
         library: {
             assets: {
-                items: FrontifyAsset[];
                 total: number;
+                items: FrontifyAsset[];
             };
         };
     };

@@ -37,11 +37,6 @@ export const AssetMap: FC<AssetMapProps> = ({ assets, defaultZoom, mapHeight, ap
         }
     }, [assets]);
 
-    const handleAssetClick = (asset: AssetWithLocation) => {
-        // Open asset in Frontify's native viewer
-        appBridge.openAssetViewer(asset.id);
-    };
-
     if (assets.length === 0) {
         return (
             <div 
@@ -80,27 +75,17 @@ export const AssetMap: FC<AssetMapProps> = ({ assets, defaultZoom, mapHeight, ap
                             <div className="tw-p-2">
                                 <h3 className="tw-font-bold tw-mb-2">{asset.title}</h3>
                                 {asset.previewUrl && (
-                                    <button
-                                        onClick={() => handleAssetClick(asset)}
-                                        className="tw-block tw-mb-2 tw-cursor-pointer hover:tw-opacity-80 tw-transition-opacity tw-border-none tw-bg-transparent tw-p-0"
-                                        title="Click to view asset details"
-                                    >
+                                    <div className="tw-mb-2">
                                         <img
                                             src={asset.previewUrl}
                                             alt={asset.title}
                                             className="tw-max-w-[200px] tw-max-h-[200px] tw-object-contain tw-rounded"
                                         />
-                                    </button>
+                                    </div>
                                 )}
-                                <p className="tw-text-sm tw-text-gray-600 tw-mb-2">
+                                <p className="tw-text-sm tw-text-gray-600">
                                     <span className="tw-font-semibold">Coordinates:</span> {asset.latitude.toFixed(6)}, {asset.longitude.toFixed(6)}
                                 </p>
-                                <button
-                                    onClick={() => handleAssetClick(asset)}
-                                    className="tw-text-sm tw-text-blue-600 hover:tw-underline tw-cursor-pointer tw-border-none tw-bg-transparent tw-p-0"
-                                >
-                                    View Asset Details →
-                                </button>
                             </div>
                         </Popup>
                     </Marker>
