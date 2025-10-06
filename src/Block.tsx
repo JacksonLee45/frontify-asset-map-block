@@ -155,6 +155,7 @@ export const AnExampleBlock: FC<BlockProps> = ({ appBridge }) => {
                         assets={assets} 
                         defaultZoom={parseInt(blockSettings.defaultZoom) || 2}
                         mapHeight={parseInt(blockSettings.mapHeight) || 600}
+                        mapStyle={blockSettings.mapStyle}
                         appBridge={appBridge}
                     />
                 </>

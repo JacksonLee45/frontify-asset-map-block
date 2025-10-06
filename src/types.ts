@@ -1,6 +1,7 @@
 export interface Settings {
     mapTitle: string;
     mapDescription: string;
+    mapStyle: string;
     defaultZoom: string;
     mapHeight: string;
     showAssetCount: boolean;

@@ -17,6 +17,17 @@ export const settings = defineSettings({
             defaultValue: 'Explore your Frontify assets on an interactive map',
         },
         {
+            id: 'mapStyle',
+            type: 'dropdown',
+            label: 'Map Style',
+            defaultValue: 'light',
+            choices: [
+                { value: 'standard', label: 'Standard OpenStreetMap' },
+                { value: 'light', label: 'Light (Minimal)' },
+                { value: 'dark', label: 'Dark Theme' },
+            ],
+        },
+        {
             id: 'defaultZoom',
             type: 'dropdown',
             label: 'Default Zoom Level',
