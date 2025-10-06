@@ -2,6 +2,7 @@ import { type FC, useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import type { AssetWithLocation } from './types';
+import type { AppBridgeBlock } from '@frontify/app-bridge';
 
 // Fix for default marker icons in Leaflet with webpack
 import 'leaflet/dist/leaflet.css';
@@ -21,9 +22,10 @@ interface AssetMapProps {
     assets: AssetWithLocation[];
     defaultZoom: number;
     mapHeight: number;
+    appBridge: AppBridgeBlock;
 }
 
-export const AssetMap: FC<AssetMapProps> = ({ assets, defaultZoom, mapHeight }) => {
+export const AssetMap: FC<AssetMapProps> = ({ assets, defaultZoom, mapHeight, appBridge }) => {
     const [center, setCenter] = useState<[number, number]>([0, 0]);
 
     useEffect(() => {
@@ -34,6 +36,11 @@ export const AssetMap: FC<AssetMapProps> = ({ assets, defaultZoom, mapHeight }) 
             setCenter([avgLat, avgLon]);
         }
     }, [assets]);
+
+    const handleAssetClick = (asset: AssetWithLocation) => {
+        // Open asset in Frontify's native viewer
+        appBridge.openAssetViewer(asset.id);
+    };
 
     if (assets.length === 0) {
         return (
@@ -73,15 +80,27 @@ export const AssetMap: FC<AssetMapProps> = ({ assets, defaultZoom, mapHeight }) 
                             <div className="tw-p-2">
                                 <h3 className="tw-font-bold tw-mb-2">{asset.title}</h3>
                                 {asset.previewUrl && (
-                                    <img
-                                        src={asset.previewUrl}
-                                        alt={asset.title}
-                                        className="tw-max-w-[200px] tw-max-h-[200px] tw-object-contain tw-mb-2"
-                                    />
+                                    <button
+                                        onClick={() => handleAssetClick(asset)}
+                                        className="tw-block tw-mb-2 tw-cursor-pointer hover:tw-opacity-80 tw-transition-opacity tw-border-none tw-bg-transparent tw-p-0"
+                                        title="Click to view asset details"
+                                    >
+                                        <img
+                                            src={asset.previewUrl}
+                                            alt={asset.title}
+                                            className="tw-max-w-[200px] tw-max-h-[200px] tw-object-contain tw-rounded"
+                                        />
+                                    </button>
                                 )}
-                                <p className="tw-text-sm tw-text-gray-600">
-                                    Lat: {asset.latitude.toFixed(6)}, Lon: {asset.longitude.toFixed(6)}
+                                <p className="tw-text-sm tw-text-gray-600 tw-mb-2">
+                                    <span className="tw-font-semibold">Coordinates:</span> {asset.latitude.toFixed(6)}, {asset.longitude.toFixed(6)}
                                 </p>
+                                <button
+                                    onClick={() => handleAssetClick(asset)}
+                                    className="tw-text-sm tw-text-blue-600 hover:tw-underline tw-cursor-pointer tw-border-none tw-bg-transparent tw-p-0"
+                                >
+                                    View Asset Details →
+                                </button>
                             </div>
                         </Popup>
                     </Marker>

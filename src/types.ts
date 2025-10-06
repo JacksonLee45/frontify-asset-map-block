@@ -27,6 +27,7 @@ export interface FrontifyAsset {
     id: string;
     title: string;
     previewUrl?: string;
+    detailUrl?: string;
     customMetadata?: CustomMetadata[];
 }
 
