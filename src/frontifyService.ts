@@ -1,18 +1,40 @@
 import type { FrontifyAssetsResponse, FrontifyAsset, AssetWithLocation } from './types';
 
-// Query for assets within a specific library
+// Query for assets within a specific library using customMetadata
 const LIBRARY_ASSETS_QUERY = `
-  query GetLibraryAssets($libraryId: ID!, $limit: Int!, $page: Int!) {
-    library(id: $libraryId) {
+  query GetLibraryAssets($id: ID!, $limit: Int!, $page: Int!) {
+    library(id: $id) {
       assets(limit: $limit, page: $page) {
         total
         items {
           id
           title
-          previewUrl
-          metadataValues {
-            key
-            value
+          customMetadata {
+            property {
+              id
+              name
+            }
+            ... on CustomMetadataValue {
+              value
+            }
+            ... on CustomMetadataValues {
+              values
+            }
+          }
+          ... on Image {
+            previewUrl
+          }
+          ... on Video {
+            previewUrl
+          }
+          ... on Audio {
+            previewUrl
+          }
+          ... on Document {
+            previewUrl
+          }
+          ... on File {
+            previewUrl
           }
         }
       }
@@ -62,7 +84,7 @@ export class FrontifyService {
                 body: JSON.stringify({
                     query: LIBRARY_ASSETS_QUERY,
                     variables: {
-                        libraryId: this.libraryId,
+                        id: this.libraryId,
                         limit,
                         page,
                     },
@@ -123,24 +145,66 @@ export class FrontifyService {
     }
 
     extractAssetsWithLocation(assets: FrontifyAsset[]): AssetWithLocation[] {
+        // Guard against undefined or null assets
+        if (!assets || !Array.isArray(assets)) {
+            console.error('extractAssetsWithLocation received invalid assets:', assets);
+            return [];
+        }
+
         return assets
             .map((asset) => {
-                const latField = asset.metadataValues.find((m) => m.key === this.latKey);
-                const lonField = asset.metadataValues.find((m) => m.key === this.lonKey);
-
-                if (!latField || !lonField) {
+                // Check if customMetadata exists and is an array with items
+                if (!asset.customMetadata || !Array.isArray(asset.customMetadata) || asset.customMetadata.length === 0) {
                     return null;
                 }
 
-                const latitude = parseFloat(latField.value);
-                const longitude = parseFloat(lonField.value);
+                // Find latitude and longitude in customMetadata
+                let latitude: number | null = null;
+                let longitude: number | null = null;
 
+                for (const metadata of asset.customMetadata) {
+                    const propertyName = metadata.property?.name?.toLowerCase();
+                    
+                    if (!propertyName) continue;
+
+                    // Get the value - could be in 'value' or 'values' field
+                    let metadataValue: string | null = null;
+                    
+                    if ('value' in metadata && metadata.value) {
+                        metadataValue = String(metadata.value);
+                    } else if ('values' in metadata && metadata.values && metadata.values.length > 0) {
+                        metadataValue = String(metadata.values[0]);
+                    }
+
+                    if (!metadataValue) continue;
+
+                    // Check if this is latitude
+                    if (propertyName === this.latKey.toLowerCase() || 
+                        propertyName.includes('lat')) {
+                        latitude = parseFloat(metadataValue);
+                    }
+
+                    // Check if this is longitude
+                    if (propertyName === this.lonKey.toLowerCase() || 
+                        propertyName.includes('lon') || 
+                        propertyName.includes('lng')) {
+                        longitude = parseFloat(metadataValue);
+                    }
+                }
+
+                // Validate we found both coordinates
+                if (latitude === null || longitude === null) {
+                    return null;
+                }
+
+                // Validate they're valid numbers
                 if (isNaN(latitude) || isNaN(longitude)) {
                     return null;
                 }
 
                 // Validate coordinate ranges
                 if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+                    console.warn(`Invalid coordinates for asset ${asset.title}: lat=${latitude}, lon=${longitude}`);
                     return null;
                 }
 

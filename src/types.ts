@@ -6,16 +6,28 @@ export interface Settings {
     showAssetCount: boolean;
 }
 
-export interface MetadataField {
-    key: string;
-    value: string;
+export interface CustomMetadataProperty {
+    id: string;
+    name?: string;
 }
+
+export interface CustomMetadataValue {
+    property: CustomMetadataProperty;
+    value?: string;
+}
+
+export interface CustomMetadataValues {
+    property: CustomMetadataProperty;
+    values?: string[];
+}
+
+export type CustomMetadata = CustomMetadataValue | CustomMetadataValues;
 
 export interface FrontifyAsset {
     id: string;
     title: string;
     previewUrl?: string;
-    metadataValues: MetadataField[];
+    customMetadata?: CustomMetadata[];
 }
 
 export interface AssetWithLocation extends FrontifyAsset {
@@ -25,9 +37,11 @@ export interface AssetWithLocation extends FrontifyAsset {
 
 export interface FrontifyAssetsResponse {
     data: {
-        assets: {
-            items: FrontifyAsset[];
-            total: number;
+        library: {
+            assets: {
+                items: FrontifyAsset[];
+                total: number;
+            };
         };
     };
 }

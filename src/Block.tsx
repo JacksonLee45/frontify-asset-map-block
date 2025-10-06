@@ -17,14 +17,62 @@ export const AnExampleBlock: FC<BlockProps> = ({ appBridge }) => {
             setError(null);
 
             try {
+                console.log('=== FRONTIFY ASSET MAP DEBUG INFO ===');
+                console.log('Environment variables:', {
+                    domain: import.meta.env.VITE_FRONTIFY_DOMAIN,
+                    hasToken: !!import.meta.env.VITE_FRONTIFY_BEARER_TOKEN,
+                    libraryId: import.meta.env.VITE_LIBRARY_ID,
+                    latKey: import.meta.env.VITE_LATITUDE_KEY,
+                    lonKey: import.meta.env.VITE_LONGITUDE_KEY,
+                });
+
                 const service = new FrontifyService();
                 const metadataKeys = service.getMetadataKeys();
+                
+                console.log('Service initialized with library ID:', service.getLibraryId());
+                console.log('Looking for metadata keys:', metadataKeys);
 
                 // Fetch all assets
+                console.log('Fetching assets from Frontify...');
                 const allAssets = await service.fetchAllAssets();
+                console.log(`Fetched ${allAssets.length} total assets from library`);
+
+                // Log first few assets to see their structure
+                if (allAssets && allAssets.length > 0) {
+                    console.log('Sample asset structure:', {
+                        id: allAssets[0].id,
+                        title: allAssets[0].title,
+                        hasPreviewUrl: !!allAssets[0].previewUrl,
+                        customMetadata: allAssets[0].customMetadata,
+                    });
+                    
+                    // Check what metadata property names exist across all assets
+                    const allMetadataKeys = new Set<string>();
+                    allAssets.forEach(asset => {
+                        if (asset && asset.customMetadata && Array.isArray(asset.customMetadata)) {
+                            asset.customMetadata.forEach(m => {
+                                if (m && m.property && m.property.name) {
+                                    allMetadataKeys.add(m.property.name);
+                                }
+                            });
+                        }
+                    });
+                    console.log('All custom metadata property names found in assets:', Array.from(allMetadataKeys));
+                } else {
+                    console.log('No assets returned or assets is empty/undefined:', allAssets);
+                }
 
                 // Extract assets with valid location metadata
                 const assetsWithLocation = service.extractAssetsWithLocation(allAssets);
+                console.log(`Found ${assetsWithLocation.length} assets with valid location data`);
+
+                if (assetsWithLocation.length > 0) {
+                    console.log('Sample asset with location:', {
+                        title: assetsWithLocation[0].title,
+                        latitude: assetsWithLocation[0].latitude,
+                        longitude: assetsWithLocation[0].longitude,
+                    });
+                }
 
                 setAssets(assetsWithLocation);
 
@@ -32,9 +80,17 @@ export const AnExampleBlock: FC<BlockProps> = ({ appBridge }) => {
                     setError(
                         `Found ${allAssets.length} total assets, but none have valid location metadata. ` +
                         `Make sure your assets have "${metadataKeys.latitude}" and ` +
-                        `"${metadataKeys.longitude}" custom metadata fields configured in Frontify.`
+                        `"${metadataKeys.longitude}" custom metadata fields configured in Frontify. ` +
+                        `Check the browser console for a list of available metadata keys.`
+                    );
+                } else if (allAssets.length === 0) {
+                    setError(
+                        `No assets found in the specified library (ID: ${service.getLibraryId()}). ` +
+                        `Please verify the library ID is correct and contains assets.`
                     );
                 }
+
+                console.log('=== END DEBUG INFO ===');
             } catch (err) {
                 console.error('Error loading assets:', err);
                 setError(
@@ -64,7 +120,7 @@ export const AnExampleBlock: FC<BlockProps> = ({ appBridge }) => {
             {loading && (
                 <div 
                     className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-bg-gray-50 tw-rounded-lg"
-                    style={{ height: `${blockSettings.mapHeight || 600}px` }}
+                    style={{ height: `${parseInt(blockSettings.mapHeight) || 600}px` }}
                 >
                     <div className="tw-animate-spin tw-rounded-full tw-h-12 tw-w-12 tw-border-b-2 tw-border-blue-600 tw-mb-4"></div>
                     <p className="tw-text-gray-600">Loading assets from Frontify...</p>
@@ -97,8 +153,8 @@ export const AnExampleBlock: FC<BlockProps> = ({ appBridge }) => {
                     )}
                     <AssetMap 
                         assets={assets} 
-                        defaultZoom={10}
-                        mapHeight={600}
+                        defaultZoom={parseInt(blockSettings.defaultZoom) || 2}
+                        mapHeight={parseInt(blockSettings.mapHeight) || 600}
                     />
                 </>
             )}
