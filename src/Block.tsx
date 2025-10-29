@@ -108,15 +108,6 @@ export const AnExampleBlock: FC<BlockProps> = ({ appBridge }) => {
 
     return (
         <div className="tw-p-6">
-            <div className="tw-mb-6">
-                <h2 className="tw-text-3xl tw-font-bold tw-mb-2">
-                    {blockSettings.mapTitle || 'Frontify Asset Map'}
-                </h2>
-                <p className="tw-text-gray-600">
-                    {blockSettings.mapDescription || 'Explore your Frontify assets on an interactive map'}
-                </p>
-            </div>
-
             {loading && (
                 <div 
                     className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-bg-gray-50 tw-rounded-lg"
@@ -136,21 +127,12 @@ export const AnExampleBlock: FC<BlockProps> = ({ appBridge }) => {
 
             {!loading && !error && assets.length > 0 && (
                 <>
-                    {blockSettings.showAssetCount && (
-                        <div className="tw-mb-4 tw-flex tw-items-center tw-justify-between">
-                            <p className="tw-text-sm tw-text-gray-600">
-                                Showing <span className="tw-font-semibold">{assets.length}</span> asset
-                                {assets.length !== 1 ? 's' : ''} with location data
-                            </p>
-                            <button
-                                type="button"
-                                onClick={() => window.location.reload()}
-                                className="tw-px-4 tw-py-2 tw-bg-blue-600 tw-text-white tw-rounded-lg hover:tw-bg-blue-700 tw-transition-colors tw-text-sm"
-                            >
-                                Refresh
-                            </button>
-                        </div>
-                    )}
+                    <div className="tw-mb-4">
+                        <p className="tw-text-sm tw-text-gray-600">
+                            <span className="tw-font-semibold">{assets.length}</span> asset
+                            {assets.length !== 1 ? 's' : ''}
+                        </p>
+                    </div>
                     <AssetMap 
                         assets={assets} 
                         defaultZoom={parseInt(blockSettings.defaultZoom) || 2}
@@ -174,7 +156,6 @@ export const AnExampleBlock: FC<BlockProps> = ({ appBridge }) => {
                             <li>Select an asset</li>
                             <li>Add custom metadata fields for latitude and longitude</li>
                             <li>Enter valid coordinates (e.g., 40.7128 for latitude, -74.0060 for longitude)</li>
-                            <li>Return here and click the Refresh button</li>
                         </ol>
                     </div>
                 </div>

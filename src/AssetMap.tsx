@@ -1,8 +1,9 @@
-import { type FC, useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { type FC } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import type { AssetWithLocation } from './types';
 import type { AppBridgeBlock } from '@frontify/app-bridge';
+import { useEffect } from 'react';
 
 // Fix for default marker icons in Leaflet with webpack
 import 'leaflet/dist/leaflet.css';
@@ -15,6 +16,17 @@ interface AssetMapProps {
     mapStyle?: string;
 }
 
+// Component to handle map centering after assets load
+const MapCenterController: FC<{ center: [number, number], zoom: number }> = ({ center, zoom }) => {
+    const map = useMap();
+    
+    useEffect(() => {
+        map.setView(center, zoom);
+    }, [center, zoom, map]);
+    
+    return null;
+};
+
 export const AssetMap: FC<AssetMapProps> = ({ 
     assets, 
     defaultZoom, 
@@ -22,16 +34,13 @@ export const AssetMap: FC<AssetMapProps> = ({
     appBridge,
     mapStyle = 'light'
 }) => {
-    const [center, setCenter] = useState<[number, number]>([0, 0]);
-
-    useEffect(() => {
-        if (assets.length > 0) {
-            // Calculate center based on all assets
-            const avgLat = assets.reduce((sum, a) => sum + a.latitude, 0) / assets.length;
-            const avgLon = assets.reduce((sum, a) => sum + a.longitude, 0) / assets.length;
-            setCenter([avgLat, avgLon]);
-        }
-    }, [assets]);
+    // Calculate center based on all assets
+    const center: [number, number] = assets.length > 0
+        ? [
+            assets.reduce((sum, a) => sum + a.latitude, 0) / assets.length,
+            assets.reduce((sum, a) => sum + a.longitude, 0) / assets.length
+          ]
+        : [0, 0];
 
     // Get tile layer configuration based on selected style
     const getTileLayer = () => {
@@ -92,30 +101,29 @@ export const AssetMap: FC<AssetMapProps> = ({
                 style={{ height: '100%', width: '100%' }}
                 scrollWheelZoom={true}
             >
+                <MapCenterController center={center} zoom={defaultZoom} />
                 <TileLayer
-                    attribution={tileConfig.attribution}
                     url={tileConfig.url}
+                    attribution={tileConfig.attribution}
                 />
                 {assets.map((asset) => (
-                    <Marker
-                        key={asset.id}
+                    <Marker 
+                        key={asset.id} 
                         position={[asset.latitude, asset.longitude]}
                         icon={customIcon}
                     >
                         <Popup>
                             <div className="tw-p-2">
-                                <h3 className="tw-font-bold tw-mb-2">{asset.title}</h3>
                                 {asset.previewUrl && (
-                                    <div className="tw-mb-2">
-                                        <img
-                                            src={asset.previewUrl}
-                                            alt={asset.title}
-                                            className="tw-max-w-[200px] tw-max-h-[200px] tw-object-contain tw-rounded"
-                                        />
-                                    </div>
+                                    <img 
+                                        src={asset.previewUrl} 
+                                        alt={asset.title}
+                                        className="tw-w-full tw-h-32 tw-object-cover tw-rounded tw-mb-2"
+                                    />
                                 )}
-                                <p className="tw-text-sm tw-text-gray-600">
-                                    <span className="tw-font-semibold">Coordinates:</span> {asset.latitude.toFixed(6)}, {asset.longitude.toFixed(6)}
+                                <h3 className="tw-font-semibold tw-mb-1">{asset.title}</h3>
+                                <p className="tw-text-xs tw-text-gray-600">
+                                    {asset.latitude.toFixed(4)}, {asset.longitude.toFixed(4)}
                                 </p>
                             </div>
                         </Popup>
