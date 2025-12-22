@@ -126,21 +126,13 @@ export const AnExampleBlock: FC<BlockProps> = ({ appBridge }) => {
             )}
 
             {!loading && !error && assets.length > 0 && (
-                <>
-                    <div className="tw-mb-4">
-                        <p className="tw-text-sm tw-text-gray-600">
-                            <span className="tw-font-semibold">{assets.length}</span> asset
-                            {assets.length !== 1 ? 's' : ''}
-                        </p>
-                    </div>
-                    <AssetMap 
-                        assets={assets} 
-                        defaultZoom={parseInt(blockSettings.defaultZoom) || 2}
-                        mapHeight={parseInt(blockSettings.mapHeight) || 600}
-                        mapStyle={blockSettings.mapStyle}
-                        appBridge={appBridge}
-                    />
-                </>
+                <AssetMap 
+                    assets={assets} 
+                    defaultZoom={parseInt(blockSettings.defaultZoom) || 2}
+                    mapHeight={parseInt(blockSettings.mapHeight) || 600}
+                    mapStyle={blockSettings.mapStyle}
+                    appBridge={appBridge}
+                />
             )}
 
             {!loading && !error && assets.length === 0 && (

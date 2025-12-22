@@ -3,20 +3,6 @@ import { defineSettings } from '@frontify/guideline-blocks-settings';
 export const settings = defineSettings({
     main: [
         {
-            id: 'mapTitle',
-            type: 'input',
-            label: 'Map Title',
-            placeholder: 'Asset Location Map',
-            defaultValue: 'Frontify Asset Map',
-        },
-        {
-            id: 'mapDescription',
-            type: 'input',
-            label: 'Map Description',
-            placeholder: 'Explore your Frontify assets on an interactive map',
-            defaultValue: 'Explore your Frontify assets on an interactive map',
-        },
-        {
             id: 'mapStyle',
             type: 'dropdown',
             label: 'Map Style',
@@ -61,12 +47,6 @@ export const settings = defineSettings({
                 { value: '800', label: 'Extra Large (800px)' },
                 { value: '1000', label: 'Huge (1000px)' },
             ],
-        },
-        {
-            id: 'showAssetCount',
-            type: 'switch',
-            label: 'Show Asset Count',
-            defaultValue: true,
         },
     ],
     style: [],

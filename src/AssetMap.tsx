@@ -63,19 +63,26 @@ export const AssetMap: FC<AssetMapProps> = ({
         }
     };
 
-    // Create custom SVG marker icon
-    const customIcon = new L.DivIcon({
-        html: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#000000"/>
-            <circle cx="12" cy="9" r="2.5" fill="white"/>
-        </svg>`,
-        className: 'custom-marker',
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        popupAnchor: [0, -32],
-    });
+    // Create custom SVG marker icon based on map style
+    const getCustomIcon = () => {
+        const isDarkMode = mapStyle === 'dark';
+        const markerColor = isDarkMode ? '#FFFFFF' : '#000000';
+        const innerCircleColor = isDarkMode ? '#000000' : '#FFFFFF';
+        
+        return new L.DivIcon({
+            html: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="${markerColor}"/>
+                <circle cx="12" cy="9" r="2.5" fill="${innerCircleColor}"/>
+            </svg>`,
+            className: 'custom-marker',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32],
+        });
+    };
 
     const tileConfig = getTileLayer();
+    const customIcon = getCustomIcon();
 
     if (assets.length === 0) {
         return (
@@ -118,13 +125,14 @@ export const AssetMap: FC<AssetMapProps> = ({
                                     <img 
                                         src={asset.previewUrl} 
                                         alt={asset.title}
-                                        className="tw-w-full tw-h-32 tw-object-cover tw-rounded tw-mb-2"
+                                        className="tw-w-full tw-h-32 tw-object-contain tw-rounded tw-mb-2"
                                     />
                                 )}
-                                <h3 className="tw-font-semibold tw-mb-1">{asset.title}</h3>
-                                <p className="tw-text-xs tw-text-gray-600">
-                                    {asset.latitude.toFixed(4)}, {asset.longitude.toFixed(4)}
-                                </p>
+                                <h3 className="tw-font-semibold tw-mb-2">{asset.title}</h3>
+                                <div className="tw-text-xs tw-text-gray-600">
+                                    <div><span className="tw-font-medium">Latitude:</span> {asset.latitude.toFixed(4)}</div>
+                                    <div><span className="tw-font-medium">Longitude:</span> {asset.longitude.toFixed(4)}</div>
+                                </div>
                             </div>
                         </Popup>
                     </Marker>
